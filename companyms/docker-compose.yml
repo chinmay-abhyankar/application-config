@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres # Pin to a specific Postgres version (e.g., 15, 14, etc.)
+    container_name: postgres_container
+    restart: unless-stopped
+    ports:
+      - "5432:5432" # Only if you need external access. Remove for better security within Docker.
+    environment:
+      POSTGRES_USER: chinmay
+      POSTGRES_PASSWORD: password  # Use a stronger password in production!
+      POSTGRES_DB: jobapp # Specify a database name
+      PGDATA: /var/lib/postgresql/data # Standard path; no need to change unless you have a specific reason
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Use a named volume for data persistence
+    networks:
+      - postgres_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest  # Or pin to a specific pgAdmin version
+    container_name: pgadmin_container
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: chinmay@example.com
+      PGADMIN_DEFAULT_PASSWORD: password  # Use a stronger password in production!
+      PGADMIN_CONFIG_SERVER_MODE: 'False' # Good to have if you don't need server mode
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin # Use a named volume
+    networks:
+      - postgres_network
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - postgres_network
+
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - postgres_network
+
+networks:
+  postgres_network: # More descriptive name
+    driver: bridge
+
+volumes:
+  postgres_data: # Named volume for Postgres data
+  pgadmin_data: # Named volume for pgAdmin data
