@@ -32,6 +32,78 @@ services:
     networks:
       - postgres_network
 
+  configserverms:
+    image: chinmayabhyankar/configserverms:latest
+    container_name: configserverms
+    ports:
+      - "8080:8080"
+    depends_on:
+      - servicereg
+    networks:
+      - microservice-network
+      - postgres_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  servicereg:
+    image: chinmayabhyankar/servicereg:latest
+    container_name: servicereg
+    ports:
+      - "8761:8761"
+    depends_on:
+      - rabbitmq
+      - zipkin
+      - postgres_container
+      - pgadmin
+    networks:
+      - microservice-network
+      - postgres_network
+
+  companyms:
+    image: chinmayabhyankar/companyms:latest
+    container_name: company
+    ports:
+      - "8081:8081"
+    depends_on:
+      - servicereg
+      - configserverms
+    networks:
+      - microservice-network
+      - postgres_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://servicereg:8761/eureka
+
+  jobms:
+    image: chinmayabhyankar/jobms:latest
+    container_name: job
+    ports:
+      - "8082:8082"
+    depends_on:
+      - servicereg
+      - configserverms
+    networks:
+      - microservice-network
+      - postgres_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://servicereg:8761/eureka
+
+  reviewms:
+    image: chinmayabhyankar/reviewms:latest
+    container_name: review
+    ports:
+      - "8083:8083"
+    depends_on:
+      - servicereg
+      - configserverms
+    networks:
+      - microservice-network
+      - postgres_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://servicereg:8761/eureka
+
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
@@ -51,6 +123,8 @@ services:
 
 networks:
   postgres_network: # More descriptive name
+    driver: bridge
+  microservice-network:
     driver: bridge
 
 volumes:
